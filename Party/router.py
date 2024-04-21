@@ -158,5 +158,5 @@ def refresh(user_id:int):
         'name': u.name,
         'code': p.code,
         'is_creator': p.creator_id == user_id,
-        'users': [{'name': u.name, 'image': u.image} for u in get_party_users(p.id)]
+        'users': [{ 'id': u.id, 'name': u.name, 'image': u.image} for u in get_party_users(p.id)]
     }
