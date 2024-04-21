@@ -98,6 +98,7 @@ def join(code:str, user:ChainUserSchema):
     return {
             'name': u.name,
             'code': code,
+            'user_id': u.id,
             'users': [{'name': u.name, 'image': u.image} for u in get_party_users(p.id)]
         }
 
