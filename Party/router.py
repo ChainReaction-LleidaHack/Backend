@@ -1,17 +1,11 @@
-from copy import copy
 import random
 import string
-from datetime import datetime
-from typing import List, Union
-
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter
 from fastapi_sqlalchemy import db
 from ChainUser.model import ChainUser
 from ChainUser.schema import ChainUserSchema
 from Party.model import Party
 
-
-# from src.error.NotFoundException import NotFoundException
 
 router = APIRouter(
     prefix="/party",
@@ -34,12 +28,12 @@ def get_party_users(id:int):
 def get_user(id:int):
     p = db.session.query(ChainUser).filter(ChainUser.id == id).first()
     if p is None:
-        raise Exception('Party not found')
+        raise Exception('User not found')
     return p
 def get_killer(id:int):
     p = db.session.query(ChainUser).filter(ChainUser.next_user_id == id).first()
     if p is None:
-        raise Exception('Party not found')
+        raise Exception('Killer not found')
     return p
 def create_user(user:ChainUserSchema, party_id:int):
     u = ChainUser(**user.dict(), party_id = party_id)
@@ -79,7 +73,6 @@ def start(code:str, user_id:int):
         raise Exception('Not autorized')
     if p.started:
         raise Exception('Party already started')
-    # ul=copy.deepcopy(p.users)
     ul=get_party_users(p.id)
     random.shuffle(ul)
     for i in range(len(ul)):
@@ -91,7 +84,7 @@ def start(code:str, user_id:int):
         db.session.refresh(u)
     return p.code
 
-@router.post("/{code}/join/")
+@router.post("/{code}/join")
 def join(code:str, user:ChainUserSchema):
     p = get_party(code)
     u = create_user(user, p.id)
