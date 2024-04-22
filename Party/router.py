@@ -97,9 +97,9 @@ def join(code:str, user:ChainUserSchema):
 
 
 @router.put("/{code}/{user_id}/die")
-def die(party:str,user_id:int):
+def die(code:str,user_id:int):
     u = get_user(user_id)
-    p = get_party(party)
+    p = get_party(code)
     if u.dead:
         raise Exception()
     k = get_killer(user_id)
