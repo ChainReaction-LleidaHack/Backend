@@ -123,8 +123,10 @@ def refresh(user_id:int):
         w = get_user(p.winner_id)
         return {
             'winner': {
-                'winner_name': w.name,
-                'winner_image': w.image
+                'id': w.id,
+                'name': w.name,
+                'image': w.image,
+                'num_killed': w.num_killed
             },
             'remaining_users': len([u for u in get_party_users(p.id) if not u.dead]),
         }
