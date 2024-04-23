@@ -23,8 +23,6 @@ def get_party_by_id(id:int):
     return p
 def get_party_users(id:int):
     return db.session.query(ChainUser).filter(ChainUser.party_id == id).all()
-
-
 def get_user(id:int):
     p = db.session.query(ChainUser).filter(ChainUser.id == id).first()
     if p is None:
@@ -41,7 +39,6 @@ def create_user(user:ChainUserSchema, party_id:int):
     db.session.commit()
     db.session.refresh(u)
     return u
-
 def generate_code(num_dig=4):
     code = ''
     while(True):
@@ -95,17 +92,20 @@ def join(code:str, user:ChainUserSchema):
             'users': [{'name': u.name, 'image': u.image} for u in get_party_users(p.id)]
         }
 
-
 @router.put("/{code}/{user_id}/die")
-def die(party:str,user_id:int):
+def die(code:str,user_id:int):
+    print(code)
     u = get_user(user_id)
-    p = get_party(party)
+    p = get_party(code)
+    if not p.started:
+        raise Exception('Party not started')
     if u.dead:
         raise Exception()
     k = get_killer(user_id)
     if k.dead:
         raise Exception()
     u.dead = True
+    k.num_killed += 1
     k.next_user_id = u.next_user_id
     if k.next_user_id == k.id:
        p.ended = True
@@ -119,7 +119,6 @@ def die(party:str,user_id:int):
 def refresh(user_id:int):
     u = get_user(user_id)
     p = get_party_by_id(u.party_id)
-    
     if p.ended:
         w = get_user(p.winner_id)
         return {
@@ -135,12 +134,13 @@ def refresh(user_id:int):
                 'name': u.name,
                 'image': u.image,
                 'dead': u.dead,
+                'num_killed': u.num_killed,
                 'remaining_users': len([u for u in get_party_users(p.id) if not u.dead]),
             }
         t = get_user(u.next_user_id)
-
         return {
                 'name': u.name,
+                'num_killed': u.num_killed,
                 'remaining_users': len([u for u in get_party_users(p.id) if not u.dead]),
                 'target': {
                         'name': t.name,
