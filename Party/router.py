@@ -121,8 +121,8 @@ def die(user_id:int):
     db.session.refresh(u)
     db.session.refresh(k)
 
-@router.get("/{code}/exists")
-def exists(code:str):
+@router.get("/{code}/exist")
+def exist(code:str):
     try:
         get_party(code)
         return True
