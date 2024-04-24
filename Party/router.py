@@ -119,6 +119,13 @@ def die(user_id:int):
     db.session.refresh(u)
     db.session.refresh(k)
 
+@router.get("/{code}/exists")
+def exits(code:str):
+    try:
+        get_party(code)
+        return True
+    except:
+        return False
 @router.get("/{user_id}/refresh")
 def refresh(user_id:int):
     u = get_user(user_id)
