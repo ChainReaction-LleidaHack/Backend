@@ -122,7 +122,7 @@ def die(user_id:int):
     db.session.refresh(k)
 
 @router.get("/{code}/exists")
-def exits(code:str):
+def exists(code:str):
     try:
         get_party(code)
         return True
