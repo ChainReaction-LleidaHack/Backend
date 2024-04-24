@@ -95,7 +95,7 @@ def join(code:str, user:ChainUserSchema):
             'users': [{'name': u.name, 'image': u.image} for u in get_party_users(p.id)]
         }
 
-@router.put("{user_id}/die")
+@router.put("/{user_id}/die")
 def die(user_id:int):
     u = get_user(user_id)
     p = get_party_by_id(u.party_id)
