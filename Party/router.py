@@ -73,6 +73,8 @@ def start(user_id:int):
         raise Exception('Party already started')
     if p.ended:
         raise Exception('Party already ended')
+    if len(get_party_users(p))<3:
+        raise Exception('Min users playing is 3')
     ul=get_party_users(p.id)
     random.shuffle(ul)
     for i in range(len(ul)):
