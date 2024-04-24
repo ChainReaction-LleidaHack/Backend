@@ -63,13 +63,16 @@ def create(user:ChainUserSchema):
                 'code': party.code},
             'user':u.id}
 
-@router.put("/{code}/start/{user_id}")
-def start(code:str, user_id:int):
-    p = get_party(code)
+@router.put("/start/{user_id}")
+def start(user_id:int):
+    u = get_user(user_id)
+    p = get_party_by_id(u.party_id)
     if not p.creator_id == user_id:
         raise Exception('Not autorized')
     if p.started:
         raise Exception('Party already started')
+    if p.ended:
+        raise Exception('Party already ended')
     ul=get_party_users(p.id)
     random.shuffle(ul)
     for i in range(len(ul)):
@@ -92,11 +95,12 @@ def join(code:str, user:ChainUserSchema):
             'users': [{'name': u.name, 'image': u.image} for u in get_party_users(p.id)]
         }
 
-@router.put("/{code}/{user_id}/die")
-def die(code:str,user_id:int):
-    print(code)
+@router.put("{user_id}/die")
+def die(user_id:int):
     u = get_user(user_id)
-    p = get_party(code)
+    p = get_party_by_id(u.party_id)
+    if p.ended:
+        raise Exception('Party already ended')
     if not p.started:
         raise Exception('Party not started')
     if u.dead:
@@ -128,6 +132,7 @@ def refresh(user_id:int):
                 'image': w.image,
                 'num_killed': w.num_killed
             },
+            'total_users': len(get_party_users(p.id)),
             'remaining_users': len([u for u in get_party_users(p.id) if not u.dead]),
         }
     if p.started:
@@ -137,12 +142,14 @@ def refresh(user_id:int):
                 'image': u.image,
                 'dead': u.dead,
                 'num_killed': u.num_killed,
+                'total_users': len(get_party_users(p.id)),
                 'remaining_users': len([u for u in get_party_users(p.id) if not u.dead]),
             }
         t = get_user(u.next_user_id)
         return {
                 'name': u.name,
                 'num_killed': u.num_killed,
+                'total_users': len(get_party_users(p.id)),
                 'remaining_users': len([u for u in get_party_users(p.id) if not u.dead]),
                 'target': {
                         'name': t.name,
