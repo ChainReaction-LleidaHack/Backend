@@ -6,7 +6,7 @@ from sqlalchemy.orm import relationship
 class ChainUser(Base):
     __tablename__ = 'ChainUser'
     id: int = Column(Integer, primary_key=True)
-    party_id: int = Column(Integer, ForeignKey('Party.id'), nullable=False)
+    party_id: int = Column(Integer, ForeignKey('Party.id', ondelete='CASCADE'), nullable=False)
     name: str = Column(String, nullable=False)
     dead: bool = Column(Boolean, default=False)
     next_user_id: int = Column(Integer, ForeignKey('ChainUser.id', ondelete='CASCADE'), nullable=True, default=None)
