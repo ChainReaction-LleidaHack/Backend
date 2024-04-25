@@ -135,7 +135,7 @@ def reset(secret:str):
         raise Exception('Secret not correct')
     db.session.query(Party).delete()
     db.session.query(ChainUser).delete()
-    db.commit()
+    db.session.commit()
 @router.get("/{user_id}/refresh")
 def refresh(user_id:int):
     u = get_user(user_id)
