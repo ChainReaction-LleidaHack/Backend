@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from fastapi_sqlalchemy import db
 from ChainUser.model import ChainUser
 from ChainUser.schema import ChainUserSchema
+from Configuration import Configuration
 from Party.model import Party
 
 
@@ -128,6 +129,12 @@ def exist(code:str):
         return True
     except:
         return False
+@router.delete('/reset/{secret}')
+def reset(secret:str):
+    if secret != Configuration.secret:
+        raise Exception('Secret not correct')
+    db.session.query(ChainUser).delete()
+    db.session.query(Party).delete()
 @router.get("/{user_id}/refresh")
 def refresh(user_id:int):
     u = get_user(user_id)
