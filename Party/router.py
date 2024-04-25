@@ -141,6 +141,7 @@ def refresh(user_id:int):
                 'image': w.image,
                 'num_killed': w.num_killed
             },
+            'num_killed': u.num_killed,
             'total_users': len(get_party_users(p.id)),
             'remaining_users': len([u for u in get_party_users(p.id) if not u.dead]),
         }
