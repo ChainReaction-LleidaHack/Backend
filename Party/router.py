@@ -50,8 +50,8 @@ def generate_code(num_dig=4):
             return code
         
 @router.post("/create")
-def create(user:ChainUserSchema):
-    party = Party(code= generate_code())
+def create(user:ChainUserSchema, rule: str):
+    party = Party(code= generate_code(), rule=rule)
     db.session.add(party)
     db.session.commit()
     db.session.refresh(party)
@@ -169,6 +169,7 @@ def refresh(user_id:int):
                 'num_killed': u.num_killed,
                 'total_users': len(get_party_users(p.id)),
                 'remaining_users': len([u for u in get_party_users(p.id) if not u.dead]),
+                'rule': p.rule,
                 'target': {
                         'name': t.name,
                         'image': t.image
@@ -177,6 +178,7 @@ def refresh(user_id:int):
     return {
         'name': u.name,
         'code': p.code,
+        'rule': p.rule,
         'is_creator': p.creator_id == user_id,
         'users': [{ 'id': u.id, 'name': u.name, 'image': u.image} for u in get_party_users(p.id)]
     }
