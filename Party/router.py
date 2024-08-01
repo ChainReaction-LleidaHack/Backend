@@ -50,8 +50,8 @@ def generate_code(num_dig=4):
             return code
         
 @router.post("/create")
-def create(user:ChainUserSchema, rule: str):
-    party = Party(code= generate_code(), rule=rule)
+def create(user:ChainUserSchema):
+    party = Party(code= generate_code())
     db.session.add(party)
     db.session.commit()
     db.session.refresh(party)
@@ -65,7 +65,7 @@ def create(user:ChainUserSchema, rule: str):
             'user':u.id}
 
 @router.put("/start/{user_id}")
-def start(user_id:int):
+def start(user_id:int, rule: str):
     u = get_user(user_id)
     p = get_party_by_id(u.party_id)
     if not p.creator_id == user_id:
@@ -81,6 +81,7 @@ def start(user_id:int):
     for i in range(len(ul)):
         ul[i].next_user_id = ul[(i+1)%len(ul)].id
     p.started = True
+    p.rule = rule
     db.session.commit()
     db.session.refresh(p)
     for u in ul:
