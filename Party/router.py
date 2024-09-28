@@ -3,50 +3,63 @@ import string
 from fastapi import APIRouter
 from fastapi_sqlalchemy import db
 from ChainUser.model import ChainUser
-from ChainUser.schema import ChainUserSchema
+from ChainUser.schema import ChainUserSchema, ChainUserInput
 from Configuration import Configuration
 from Party.model import Party
+from error.InvalidDataException import InvalidDataException
 
 
-router = APIRouter(
+router = APIRouter( 
     prefix="/party",
 )
 
 def get_party(code:str):
     p = db.session.query(Party).filter(Party.ended == False).filter(Party.code == code).first()
     if p is None:
-        raise Exception('Party not found')
+        raise InvalidDataException('Party not found')
     return p
+
 def get_party_by_id(id:int):
     p = db.session.query(Party).filter(Party.id == id).first()
     if p is None:
-        raise Exception('Party not found')
+        raise InvalidDataException('Party not found')
     return p
+
+def get_party_by_user(user_id:int):
+    u = db.session.query(ChainUser).filter(ChainUser.id == user_id).first()
+    if u is None:
+        raise InvalidDataException('User not found')
+    return get_party_by_id(u.party_id)
+
 def get_party_users(id:int):
     return db.session.query(ChainUser).filter(ChainUser.party_id == id).all()
+
 def get_user(id:int):
     p = db.session.query(ChainUser).filter(ChainUser.id == id).first()
     if p is None:
-        raise Exception('User not found')
+        raise InvalidDataException('User not found')
     return p
+
 def get_killer(id:int):
     p = db.session.query(ChainUser).filter(ChainUser.next_user_id == id).first()
     if p is None:
-        raise Exception('Killer not found')
+        raise InvalidDataException('Killer not found')
     return p
+
 def create_user(user:ChainUserSchema, party_id:int):
     u = ChainUser(**user.dict(), party_id = party_id)
     db.session.add(u)
     db.session.commit()
     db.session.refresh(u)
     return u
+
 def generate_code(num_dig=4):
     code = ''
     while(True):
         code = ''.join(random.choices(string.ascii_uppercase, k=num_dig))
         try:
             get_party(code)
-        except Exception:
+        except InvalidDataException:
             return code
         
 @router.post("/create")
@@ -69,13 +82,13 @@ def start(user_id:int):
     u = get_user(user_id)
     p = get_party_by_id(u.party_id)
     if not p.creator_id == user_id:
-        raise Exception('Not autorized')
+        raise InvalidDataException('Not autorized')
     if p.started:
-        raise Exception('Party already started')
+        raise InvalidDataException('Party already started')
     if p.ended:
-        raise Exception('Party already ended')
+        raise InvalidDataException('Party already ended')
     if len(get_party_users(p.id))<3:
-        raise Exception('Min users playing is 3')
+        raise InvalidDataException('Min users playing is 3')
     ul=get_party_users(p.id)
     random.shuffle(ul)
     for i in range(len(ul)):
@@ -90,6 +103,9 @@ def start(user_id:int):
 @router.post("/{code}/join")
 def join(code:str, user:ChainUserSchema):
     p = get_party(code)
+    existing_player = db.session.query(ChainUser).filter(ChainUser.name == user, p == ChainUser.party_id)
+    if existing_player:
+        raise InvalidDataException("There is already one player with this name")
     u = create_user(user, p.id)
     return {
             'name': u.name,
@@ -103,14 +119,14 @@ def die(user_id:int):
     u = get_user(user_id)
     p = get_party_by_id(u.party_id)
     if p.ended:
-        raise Exception('Party already ended')
+        raise InvalidDataException('Party already ended')
     if not p.started:
-        raise Exception('Party not started')
+        raise InvalidDataException('Party not started')
     if u.dead:
-        raise Exception()
+        raise InvalidDataException()
     k = get_killer(user_id)
     if k.dead:
-        raise Exception()
+        raise InvalidDataException()
     u.dead = True
     k.num_killed += 1
     k.next_user_id = u.next_user_id
@@ -122,6 +138,11 @@ def die(user_id:int):
     db.session.refresh(u)
     db.session.refresh(k)
 
+@router.get("/{code}/remaining")
+def get_remaining(code:str):
+    party = get_party(code)
+    return get_party_users(party.id)
+
 @router.get("/{code}/exist")
 def exist(code:str):
     try:
@@ -129,13 +150,28 @@ def exist(code:str):
         return True
     except:
         return False
+    
 @router.delete('/reset/{secret}')
 def reset(secret:str):
     if secret != Configuration.secret:
-        raise Exception('Secret not correct')
+        raise InvalidDataException('Secret not correct')
     db.session.query(Party).delete()
     db.session.query(ChainUser).delete()
     db.session.commit()
+
+@router.delete("/{user_id}")
+def delete(user_id:int, payload:ChainUserInput):
+    p = get_party_by_user(user_id)
+    if user_id == p.creator_id:
+        raise InvalidDataException('Leader can not be removed from the party')
+    if payload.id != p.creator_id:
+        raise InvalidDataException('Only party leader can remove players')
+    u = get_user(user_id)
+    db.session.delete(u)
+    db.session.commit()
+    return u
+    
+
 @router.get("/{user_id}/refresh")
 def refresh(user_id:int):
     u = get_user(user_id)

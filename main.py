@@ -29,6 +29,12 @@ app.add_middleware(
             expose_headers=["*"],
         )
 
+from error import error_handler as eh
+from error.InvalidDataException import InvalidDataException
+
+app.add_exception_handler(InvalidDataException,
+                                eh.invalid_data_exception_handler)
+
 app.add_middleware(DBSessionMiddleware, db_url=Configuration.database.url)
 
 app.include_router(router)
@@ -40,3 +46,22 @@ for route in app.routes:
 @app.get("/")
 def root():
     return RedirectResponse(url='/docs')
+
+# from fastapi import FastAPI, WebSocket
+
+# from utils.ConnectionManager import ConnectionManager
+
+# app = FastAPI()
+
+# manager = ConnectionManager()
+
+# @app.websocket("/communicate")
+# async def websocket_endpoint(websocket: WebSocket):
+#     await manager.connect(websocket)
+#     try:
+#         while True:
+#             data = await websocket.receive_text()
+#             await manager.send_personal_message(f"Received:{data}",websocket)
+#     except WebSocketDisconnect:
+#         manager.disconnect(websocket)
+#         await manager.send_personal_message("Bye!!!",websocket)
