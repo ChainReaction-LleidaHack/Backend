@@ -34,6 +34,9 @@ def get_party_by_user(user_id:int):
 def get_party_users(id:int):
     return db.session.query(ChainUser).filter(ChainUser.party_id == id).all()
 
+def get_party_users_alive(id:int):
+    return db.session.query(ChainUser).filter(ChainUser.party_id == id, ChainUser.dead == False).all()
+
 def get_user(id:int):
     p = db.session.query(ChainUser).filter(ChainUser.id == id).first()
     if p is None:
@@ -103,7 +106,7 @@ def start(user_id:int):
 @router.post("/{code}/join")
 def join(code:str, user:ChainUserSchema):
     p = get_party(code)
-    existing_player = db.session.query(ChainUser).filter(ChainUser.name == user, p == ChainUser.party_id)
+    existing_player = db.session.query(ChainUser).filter(ChainUser.name == user.name, p.id == ChainUser.party_id).first()
     if existing_player:
         raise InvalidDataException("There is already one player with this name")
     u = create_user(user, p.id)
@@ -140,8 +143,8 @@ def die(user_id:int):
 
 @router.get("/{code}/remaining")
 def get_remaining(code:str):
-    party = get_party(code)
-    return get_party_users(party.id)
+    p = get_party(code)
+    return {'users': [{ 'name': u.name, 'image': u.image, 'id': u.id} for u in get_party_users_alive(p.id)]}
 
 @router.get("/{code}/exist")
 def exist(code:str):
@@ -167,6 +170,7 @@ def delete(user_id:int, payload:ChainUserInput):
     if payload.id != p.creator_id:
         raise InvalidDataException('Only party leader can remove players')
     u = get_user(user_id)
+    die(user_id)
     db.session.delete(u)
     db.session.commit()
     return u
