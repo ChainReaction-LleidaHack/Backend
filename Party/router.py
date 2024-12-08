@@ -81,7 +81,7 @@ def create(user:ChainUserSchema):
             'user':u.id}
 
 @router.put("/start/{user_id}")
-def start(user_id:int):
+def start(user_id:int, rule: str):
     u = get_user(user_id)
     p = get_party_by_id(u.party_id)
     if not p.creator_id == user_id:
@@ -97,6 +97,7 @@ def start(user_id:int):
     for i in range(len(ul)):
         ul[i].next_user_id = ul[(i+1)%len(ul)].id
     p.started = True
+    p.rule = rule
     db.session.commit()
     db.session.refresh(p)
     for u in ul:
@@ -209,6 +210,7 @@ def refresh(user_id:int):
                 'num_killed': u.num_killed,
                 'total_users': len(get_party_users(p.id)),
                 'remaining_users': len([u for u in get_party_users(p.id) if not u.dead]),
+                'rule': p.rule,
                 'target': {
                         'name': t.name,
                         'image': t.image
@@ -217,6 +219,7 @@ def refresh(user_id:int):
     return {
         'name': u.name,
         'code': p.code,
+        'rule': p.rule,
         'is_creator': p.creator_id == user_id,
         'users': [{ 'id': u.id, 'name': u.name, 'image': u.image} for u in get_party_users(p.id)]
     }
